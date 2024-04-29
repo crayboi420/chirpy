@@ -8,12 +8,7 @@ import (
 )
 
 func main(){
-	mux:= http.NewServeMux()
-	corsMux := middleware(mux)
-	serv := http.Server{
-		Addr: ":8080",
-		Handler: corsMux,
-	}
+	serv := createServer(":8080")
 
 	err:= serv.ListenAndServe()
 	if errors.Is(err, http.ErrServerClosed) {

@@ -14,3 +14,14 @@ func middleware(next http.Handler) http.Handler{
 		next.ServeHTTP(w,r)
 	})
 }
+
+func createServer(addr string) http.Server {
+
+	mux := http.NewServeMux()
+	mux.Handle("/",http.FileServer(http.Dir("./files/")))
+	corsMux := middleware(mux)
+	return http.Server{
+		Addr: addr,
+		Handler: corsMux,
+	}
+}
