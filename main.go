@@ -2,19 +2,30 @@ package main
 
 import (
 	"net/http"
-	"errors"
-	"fmt"
-	"os"
+	"log"
 )
 
 func main(){
-	serv := createServer(":8080")
+	const filepathRoot = "./files/"
+	const port = "8080"
 
-	err:= serv.ListenAndServe()
-	if errors.Is(err, http.ErrServerClosed) {
-		fmt.Printf("server closed\n")
-	} else if err != nil {
-		fmt.Printf("error starting server: %s\n", err)
-		os.Exit(1)
+	apiCfg := apiConfig{
+		fileserverHits: 0,
 	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/app/*", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
+	mux.HandleFunc("GET /api/healthz", healthz)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.middlewareMetricsHits)
+	mux.HandleFunc("/api/reset", apiCfg.middlewareMetricsReset)
+
+	corsMux := middlewareCORS(mux)
+
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: corsMux,
+	}
+
+	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Fatal(srv.ListenAndServe())
 }
