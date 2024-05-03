@@ -1,5 +1,11 @@
 package database
 
+import (
+	"errors"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
 func (db *DB) CreateChirp(body string) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
@@ -35,18 +41,24 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
-
-func (db *DB) CreateUser(email string,password string) (User, error) {
+func (db *DB) CreateUser(email string, password string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
-
+	for _, user := range dbStructure.Users {
+		if user.Email == email {
+			return User{}, errors.New("user email already exists")
+		}
+	}
 	id := len(dbStructure.Users) + 1
+
+	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
 	user := User{
-		ID:   id,
-		Email: email,
-		Password: password,
+		ID:       id,
+		Email:    email,
+		Password: hash,
 	}
 	dbStructure.Users[id] = user
 
