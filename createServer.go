@@ -1,19 +1,23 @@
 package main
 
 import (
+	// "encoding/json"
+	// "log"
 	"net/http"
-	// "strconv"
+	// "strings"
 	"fmt"
+	"github.com/crayboi420/chirpy/internal/database"
 )
 
 type apiConfig struct {
 	fileserverHits int
+	db             database.DB
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.fileserverHits++
-		next.ServeHTTP(w,r)
+		next.ServeHTTP(w, r)
 	})
 }
 func (cfg *apiConfig) middlewareMetricsReset(w http.ResponseWriter, r *http.Request) {
@@ -25,13 +29,13 @@ func (cfg *apiConfig) middlewareMetricsHits(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 	w.Write(
 		[]byte(
-		fmt.Sprintf(`<html>
+			fmt.Sprintf(`<html>
 			<body>
 			<h1>Welcome, Chirpy Admin</h1>
 			<p>Chirpy has been visited %d times!</p>
 			</body>
 			
-			</html>`,cfg.fileserverHits,
+			</html>`, cfg.fileserverHits,
 			),
 		),
 	)
@@ -48,10 +52,4 @@ func middlewareCORS(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-func healthz(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
