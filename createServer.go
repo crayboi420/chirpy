@@ -1,18 +1,9 @@
 package main
 
 import (
-	// "encoding/json"
-	// "log"
-	"net/http"
-	// "strings"
 	"fmt"
-	"github.com/crayboi420/chirpy/internal/database"
+	"net/http"
 )
-
-type apiConfig struct {
-	fileserverHits int
-	db             database.DB
-}
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -1,20 +1,15 @@
-package database
+package main
 
-import "sync"
+import "github.com/crayboi420/chirpy/internal/database"
 
-type DB struct {
-	path string
-	mu   *sync.RWMutex
+type apiConfig struct {
+	fileserverHits int
+	db             database.DB
 }
 
 type Chirp struct {
 	ID   int    `json:"id"`
 	Body string `json:"body"`
-}
-
-type DBStructure struct {
-	Chirps map[int]Chirp `json:"chirps"`
-	Users  map[int]User  `json:"users"`
 }
 
 type User struct {
