@@ -3,21 +3,25 @@ package main
 import (
 	"log"
 	"net/http"
-	"fmt"
+	"os"
+
 	"github.com/crayboi420/chirpy/internal/database"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	const filepathRoot = "./files/"
 	const port = "8080"
 
+	godotenv.Load()
+	jwtSecret := os.Getenv("JWT_SECRET")
+
 	db, _ := database.NewDB("./database.json")
 	apiCfg := apiConfig{
 		fileserverHits: 0,
 		db:             *db,
+		jwtSecret:      jwtSecret,
 	}
-	
-
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/*", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
@@ -31,9 +35,10 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
 	mux.HandleFunc("GET /api/users", apiCfg.handlerUsersRetrieve)
+	mux.HandleFunc("PUT /api/users", apiCfg.handlerUsersUpdate)
 	mux.HandleFunc("GET /api/users/{userID}", apiCfg.handlerUserRetrieve)
 
-	mux.HandleFunc("GET /api/login", apiCfg.handlerLogin)
+	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 
 	corsMux := middlewareCORS(mux)
 
@@ -44,5 +49,5 @@ func main() {
 
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(srv.ListenAndServe())
-	
+
 }

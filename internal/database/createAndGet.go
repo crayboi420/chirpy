@@ -83,3 +83,26 @@ func (db *DB) GetUsers() ([]User, error) {
 
 	return users, nil
 }
+
+func (db *DB) UpdateUsers(targetID int, email string, password string) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+	var hsh []byte
+
+	for i := range dbStructure.Users {
+		if dbStructure.Users[i].ID == targetID {
+			hsh, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			dbStructure.Users[i] = User{Email: email, Password: hsh, ID: targetID}
+			break
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	db.writeDB(dbStructure)
+	return nil
+}

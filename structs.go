@@ -5,6 +5,7 @@ import "github.com/crayboi420/chirpy/internal/database"
 type apiConfig struct {
 	fileserverHits int
 	db             database.DB
+	jwtSecret      string
 }
 
 type Chirp struct {
