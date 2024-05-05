@@ -26,6 +26,23 @@ func cleanWords(inc string) string {
 
 func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
 
+	var targetAuthor int
+	var err error
+
+	id_to_get := r.URL.Query().Get("author_id")
+	if len(id_to_get)==0 {
+		targetAuthor = 0
+	} else {
+		targetAuthor,err = strconv.Atoi(id_to_get)
+		if err!=nil{
+			respondWithError(w,http.StatusBadRequest,"Author id not an int")
+			return
+		}
+	}
+
+	sortID := r.URL.Query().Get("sort")
+	if sortID == ""{sortID = "asc"}
+	
 	dbChirps, err := cfg.db.GetChirps()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps")
@@ -34,16 +51,23 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 
 	chirps := []Chirp{}
 	for _, dbChirp := range dbChirps {
-		chirps = append(chirps, Chirp{
-			ID:       dbChirp.ID,
-			Body:     dbChirp.Body,
-			AuthorID: dbChirp.AuthorID,
-		})
+		if targetAuthor==0 || targetAuthor==dbChirp.AuthorID{
+			chirps = append(chirps, Chirp{
+				ID:       dbChirp.ID,
+				Body:     dbChirp.Body,
+				AuthorID: dbChirp.AuthorID,
+			})
+		}
 	}
-
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
+	if sortID == "asc"{
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID < chirps[j].ID
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID > chirps[j].ID
+		})	
+	}
 
 	respondWithJSON(w, http.StatusOK, chirps)
 }
