@@ -2,8 +2,9 @@ package database
 
 import (
 	"errors"
-
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	"time"
 )
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
@@ -84,25 +85,67 @@ func (db *DB) GetUsers() ([]User, error) {
 	return users, nil
 }
 
-func (db *DB) UpdateUsers(targetID int, email string, password string) error {
+func (db *DB) UpdateUsers(targetID int, email string, password string, refresh string) error {
+
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return err
 	}
-	var hsh []byte
 
-	for i := range dbStructure.Users {
-		if dbStructure.Users[i].ID == targetID {
-			hsh, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-			dbStructure.Users[i] = User{Email: email, Password: hsh, ID: targetID}
+	// Find the user by iterating since the key may not match the user ID
+	var user *User
+	var target int
+	for i, u := range dbStructure.Users {
+		if u.ID == targetID {
+			user = &u
+			target = i
 			break
 		}
 	}
 
+	if user == nil {
+		return fmt.Errorf("user with ID %d not found", targetID)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
+	user.Password = hashedPassword
 
-	db.writeDB(dbStructure)
-	return nil
+	// Update refresh token logic
+	user.RefreshToken, user.RefreshExpiryTime = db.updateRefreshToken(refresh, *user)
+
+	// Always update the email as it's a straightforward string assignment
+	user.Email = email
+
+	dbStructure.Users[target] = *user
+	// Write updated DB back to storage
+	return db.writeDB(dbStructure)
+}
+
+// Helper function to handle refresh token logic
+func (db *DB) updateRefreshToken(refresh string, user User) (string, time.Time) {
+	if refresh != "" {
+		// Generate new refresh token with new expiry time
+		return refresh, time.Now().Add(24 * 60 * time.Hour) // 60 days
+	}
+	// If no new token provided, return existing token details
+	return user.RefreshToken, user.RefreshExpiryTime
+}
+
+func (db *DB) RevokeRefreshToken(refresh string) error {
+	dbStruct, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+	for i, usr := range dbStruct.Users {
+		if usr.RefreshToken == refresh {
+			n_usr := User{Email: usr.Email, ID: usr.ID, Password: usr.Password}
+			dbStruct.Users[i] = n_usr
+			db.writeDB(dbStruct)
+			return nil
+		}
+	}
+	return fmt.Errorf("coulnd't find token %v", refresh)
 }
