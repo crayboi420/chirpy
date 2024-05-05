@@ -22,10 +22,11 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type outpt struct {
-		ID      int    `json:"id"`
-		Email   string `json:"email"`
-		Token   string `json:"token"`
-		Refresh string `json:"refresh_token"`
+		ID          int    `json:"id"`
+		Email       string `json:"email"`
+		Token       string `json:"token"`
+		Refresh     string `json:"refresh_token"`
+		IsChirpyRed bool   `json:"is_chirpy_red"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -54,7 +55,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 				}
 				refr := generateRefresh(32)
 				cfg.db.UpdateUsers(user.ID, user.Email, params.Password, refr)
-				respondWithJSON(w, http.StatusOK, outpt{ID: user.ID, Email: user.Email, Token: tkn, Refresh: refr})
+				respondWithJSON(w, http.StatusOK, outpt{ID: user.ID, Email: user.Email, Token: tkn, Refresh: refr, IsChirpyRed: user.IsChirpyRed})
 				return
 			} else {
 				respondWithError(w, http.StatusUnauthorized, "Password is wrong")
@@ -81,10 +82,10 @@ func (cfg *apiConfig) JWTToken(id int, expires_seconds int64) (string, error) {
 
 func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request) {
 
-	claims,err := cfg.checkHeader(r)
+	claims, err := cfg.checkHeader(r)
 
-	if err!=nil{
-		respondWithError(w,http.StatusUnauthorized,err.Error())
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
 	}
 	type inpt struct {
 		Email    string `json:"email"`
@@ -99,7 +100,7 @@ func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request)
 	intID, _ := strconv.Atoi(id)
 	cfg.db.UpdateUsers(intID, params.Email, params.Password, "")
 
-	respondWithJSON(w, http.StatusOK, User{ID: intID, Email: params.Email})
+	respondWithJSON(w, http.StatusOK, User{ID: intID, Email: params.Email, IsChirpyRed: false})
 }
 
 func generateRefresh(length int) string {
@@ -161,9 +162,8 @@ func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, "")
 }
 
-func (cfg *apiConfig) checkHeader(r *http.Request) (*jwt.StandardClaims,error){
-	
-	
+func (cfg *apiConfig) checkHeader(r *http.Request) (*jwt.StandardClaims, error) {
+
 	auth := r.Header.Get("Authorization")
 	token := strings.TrimPrefix(auth, "Bearer ")
 	claims := jwt.StandardClaims{}
@@ -171,10 +171,10 @@ func (cfg *apiConfig) checkHeader(r *http.Request) (*jwt.StandardClaims,error){
 		return []byte(cfg.jwtSecret), nil
 	})
 	if err != nil {
-		return &claims,fmt.Errorf("coulnd't parse claims")
+		return &claims, fmt.Errorf("coulnd't parse claims")
 	}
 	if !parsed.Valid {
-		return &claims,fmt.Errorf("not a valid token")
+		return &claims, fmt.Errorf("not a valid token")
 	}
-	return &claims,nil
+	return &claims, nil
 }

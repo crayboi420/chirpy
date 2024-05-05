@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
 )
 
 func cleanWords(inc string) string {
@@ -36,8 +35,8 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 	chirps := []Chirp{}
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, Chirp{
-			ID:   dbChirp.ID,
-			Body: dbChirp.Body,
+			ID:       dbChirp.ID,
+			Body:     dbChirp.Body,
 			AuthorID: dbChirp.AuthorID,
 		})
 	}
@@ -75,15 +74,15 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	chirp, err := cfg.db.CreateChirp(cleaned,authID)
+	chirp, err := cfg.db.CreateChirp(cleaned, authID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create chirp")
 		return
 	}
 
 	respondWithJSON(w, http.StatusCreated, Chirp{
-		ID:   chirp.ID,
-		Body: chirp.Body,
+		ID:       chirp.ID,
+		Body:     chirp.Body,
 		AuthorID: authID,
 	})
 }
@@ -105,7 +104,7 @@ func (cfg *apiConfig) handlerChirpRetrieve(w http.ResponseWriter, r *http.Reques
 	resp := Chirp{}
 	for _, chirp := range dbChirps {
 		if chirp.ID == reqInt {
-			resp = Chirp{ID: chirp.ID, Body: chirp.Body,AuthorID: chirp.AuthorID}
+			resp = Chirp{ID: chirp.ID, Body: chirp.Body, AuthorID: chirp.AuthorID}
 		}
 	}
 	if resp.ID == 0 {
@@ -125,36 +124,36 @@ func validateChirp(body string) (string, error) {
 	return cleaned, nil
 }
 
-func (cfg *apiConfig) handlerChirpDelete(w http.ResponseWriter,r *http.Request){
-	claims,err := cfg.checkHeader(r)
-	if err!=nil{
-		respondWithError(w,http.StatusUnauthorized,err.Error())
+func (cfg *apiConfig) handlerChirpDelete(w http.ResponseWriter, r *http.Request) {
+	claims, err := cfg.checkHeader(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	authID,_ := strconv.Atoi(claims.Subject)
+	authID, _ := strconv.Atoi(claims.Subject)
 
-	del_id,_ := strconv.Atoi(r.PathValue("chirpID"))
-	chrps,err := cfg.db.GetChirps()
-	if err!= nil{
-		respondWithError(w,http.StatusInternalServerError,err.Error())
+	del_id, _ := strconv.Atoi(r.PathValue("chirpID"))
+	chrps, err := cfg.db.GetChirps()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	for _,chrp := range chrps{
-		if chrp.ID == del_id{
-			if chrp.AuthorID == authID{
+	for _, chrp := range chrps {
+		if chrp.ID == del_id {
+			if chrp.AuthorID == authID {
 				err := cfg.db.DeleteChirp(del_id)
-				if err!= nil{
-					respondWithError(w,http.StatusInternalServerError,err.Error())
+				if err != nil {
+					respondWithError(w, http.StatusInternalServerError, err.Error())
 					return
 				}
-				respondWithJSON(w,http.StatusOK,"")
+				respondWithJSON(w, http.StatusOK, "")
 				return
-			} else{
-				respondWithError(w,http.StatusForbidden,"Author ID wrong")
+			} else {
+				respondWithError(w, http.StatusForbidden, "Author ID wrong")
 				return
 			}
 		}
 	}
-	respondWithError(w,http.StatusBadRequest,"chirp doesn't exist")
+	respondWithError(w, http.StatusBadRequest, "chirp doesn't exist")
 }

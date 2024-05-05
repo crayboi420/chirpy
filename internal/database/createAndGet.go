@@ -140,7 +140,7 @@ func (db *DB) RevokeRefreshToken(refresh string) error {
 	}
 	for i, usr := range dbStruct.Users {
 		if usr.RefreshToken == refresh {
-			n_usr := User{Email: usr.Email, ID: usr.ID, Password: usr.Password}
+			n_usr := User{Email: usr.Email, ID: usr.ID, Password: usr.Password, IsChirpyRed: usr.IsChirpyRed}
 			dbStruct.Users[i] = n_usr
 			db.writeDB(dbStruct)
 			return nil
@@ -149,17 +149,32 @@ func (db *DB) RevokeRefreshToken(refresh string) error {
 	return fmt.Errorf("coulnd't find token %v", refresh)
 }
 
-func (db *DB) DeleteChirp(id int) error{
-	dbs,err := db.loadDB()
-	if err!=nil{
+func (db *DB) DeleteChirp(id int) error {
+	dbs, err := db.loadDB()
+	if err != nil {
 		return err
 	}
-	for _,chirp := range dbs.Chirps{
-		if chirp.ID==id{
-			delete(dbs.Chirps,id)
+	for _, chirp := range dbs.Chirps {
+		if chirp.ID == id {
+			delete(dbs.Chirps, id)
 			break
 		}
 	}
 	return nil
-	
+}
+
+func (db *DB) UpdateRed(id int, isRed bool) error {
+	dbs, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+	for _, usr := range dbs.Users {
+		if usr.ID == id {
+			n_usr := usr
+			n_usr.IsChirpyRed = isRed
+			dbs.Users[id] = n_usr
+			return db.writeDB(dbs)
+		}
+	}
+	return fmt.Errorf("user not found")
 }

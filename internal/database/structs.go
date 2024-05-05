@@ -27,4 +27,5 @@ type User struct {
 	Password          []byte    `json:"password"`
 	RefreshToken      string    `json:"refresh_token"`
 	RefreshExpiryTime time.Time `json:"refresh_expiry_time"`
+	IsChirpyRed       bool      `json:"is_chirpy_red"`
 }

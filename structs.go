@@ -6,6 +6,7 @@ type apiConfig struct {
 	fileserverHits int
 	db             database.DB
 	jwtSecret      string
+	polkaKey       string
 }
 
 type Chirp struct {
@@ -15,7 +16,8 @@ type Chirp struct {
 }
 
 type User struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+	ID          int    `json:"id"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
+	Email       string `json:"email"`
 	// Password string `json:"password"`
 }
