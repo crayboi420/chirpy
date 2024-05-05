@@ -148,3 +148,18 @@ func (db *DB) RevokeRefreshToken(refresh string) error {
 	}
 	return fmt.Errorf("coulnd't find token %v", refresh)
 }
+
+func (db *DB) DeleteChirp(id int) error{
+	dbs,err := db.loadDB()
+	if err!=nil{
+		return err
+	}
+	for _,chirp := range dbs.Chirps{
+		if chirp.ID==id{
+			delete(dbs.Chirps,id)
+			break
+		}
+	}
+	return nil
+	
+}

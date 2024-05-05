@@ -124,3 +124,37 @@ func validateChirp(body string) (string, error) {
 	cleaned := cleanWords(body)
 	return cleaned, nil
 }
+
+func (cfg *apiConfig) handlerChirpDelete(w http.ResponseWriter,r *http.Request){
+	claims,err := cfg.checkHeader(r)
+	if err!=nil{
+		respondWithError(w,http.StatusUnauthorized,err.Error())
+		return
+	}
+	authID,_ := strconv.Atoi(claims.Subject)
+
+	del_id,_ := strconv.Atoi(r.PathValue("chirpID"))
+	chrps,err := cfg.db.GetChirps()
+	if err!= nil{
+		respondWithError(w,http.StatusInternalServerError,err.Error())
+		return
+	}
+
+	for _,chrp := range chrps{
+		if chrp.ID == del_id{
+			if chrp.AuthorID == authID{
+				err := cfg.db.DeleteChirp(del_id)
+				if err!= nil{
+					respondWithError(w,http.StatusInternalServerError,err.Error())
+					return
+				}
+				respondWithJSON(w,http.StatusOK,"")
+				return
+			} else{
+				respondWithError(w,http.StatusForbidden,"Author ID wrong")
+				return
+			}
+		}
+	}
+	respondWithError(w,http.StatusBadRequest,"chirp doesn't exist")
+}
