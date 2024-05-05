@@ -1,12 +1,13 @@
 package main
 
 import (
-	"strings"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
-	"encoding/json"
 	"strconv"
-	"errors"
+	"strings"
+
 )
 
 func cleanWords(inc string) string {
@@ -24,7 +25,7 @@ func cleanWords(inc string) string {
 	return strings.Join(wordsinc, " ")
 }
 
-func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, _ *http.Request) {
+func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
 
 	dbChirps, err := cfg.db.GetChirps()
 	if err != nil {
@@ -37,6 +38,7 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, _ *http.Reque
 		chirps = append(chirps, Chirp{
 			ID:   dbChirp.ID,
 			Body: dbChirp.Body,
+			AuthorID: dbChirp.AuthorID,
 		})
 	}
 
@@ -48,13 +50,20 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, _ *http.Reque
 }
 
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
+	claims, err := cfg.checkHeader(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+	}
+	authStr := claims.Subject
+	authID, _ := strconv.Atoi(authStr)
+
 	type parameters struct {
 		Body string `json:"body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
 		return
@@ -66,7 +75,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	chirp, err := cfg.db.CreateChirp(cleaned)
+	chirp, err := cfg.db.CreateChirp(cleaned,authID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create chirp")
 		return
@@ -75,6 +84,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	respondWithJSON(w, http.StatusCreated, Chirp{
 		ID:   chirp.ID,
 		Body: chirp.Body,
+		AuthorID: authID,
 	})
 }
 
@@ -95,7 +105,7 @@ func (cfg *apiConfig) handlerChirpRetrieve(w http.ResponseWriter, r *http.Reques
 	resp := Chirp{}
 	for _, chirp := range dbChirps {
 		if chirp.ID == reqInt {
-			resp = Chirp{ID: chirp.ID, Body: chirp.Body}
+			resp = Chirp{ID: chirp.ID, Body: chirp.Body,AuthorID: chirp.AuthorID}
 		}
 	}
 	if resp.ID == 0 {

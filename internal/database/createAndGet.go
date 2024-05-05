@@ -7,16 +7,16 @@ import (
 	"time"
 )
 
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) CreateChirp(body string, AuthorID int) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return Chirp{}, err
 	}
-
 	id := len(dbStructure.Chirps) + 1
 	chirp := Chirp{
-		ID:   id,
-		Body: body,
+		AuthorID: AuthorID,
+		ID:       id,
+		Body:     body,
 	}
 	dbStructure.Chirps[id] = chirp
 
@@ -38,7 +38,6 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	for _, chirp := range dbStructure.Chirps {
 		chirps = append(chirps, chirp)
 	}
-
 	return chirps, nil
 }
 

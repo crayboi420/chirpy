@@ -9,8 +9,9 @@ type apiConfig struct {
 }
 
 type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	AuthorID int    `json:"author_id"`
+	ID       int    `json:"id"`
+	Body     string `json:"body"`
 }
 
 type User struct {

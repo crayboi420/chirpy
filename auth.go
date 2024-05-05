@@ -4,12 +4,14 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/golang-jwt/jwt"
-	"golang.org/x/crypto/bcrypt"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
@@ -79,21 +81,11 @@ func (cfg *apiConfig) JWTToken(id int, expires_seconds int64) (string, error) {
 
 func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request) {
 
-	auth := r.Header.Get("Authorization")
-	token := strings.TrimPrefix(auth, "Bearer ")
-	claims := jwt.StandardClaims{}
-	parsed, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(cfg.jwtSecret), nil
-	})
-	if err != nil {
-		respondWithError(w, 401, "Couldn't parse claims: "+err.Error())
-		return
-	}
-	if !parsed.Valid {
-		respondWithError(w, http.StatusUnauthorized, "Token not valid")
-		return
-	}
+	claims,err := cfg.checkHeader(r)
 
+	if err!=nil{
+		respondWithError(w,http.StatusUnauthorized,err.Error())
+	}
 	type inpt struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -167,4 +159,22 @@ func (cfg *apiConfig) handlerRevoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJSON(w, http.StatusOK, "")
+}
+
+func (cfg *apiConfig) checkHeader(r *http.Request) (*jwt.StandardClaims,error){
+	
+	
+	auth := r.Header.Get("Authorization")
+	token := strings.TrimPrefix(auth, "Bearer ")
+	claims := jwt.StandardClaims{}
+	parsed, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(cfg.jwtSecret), nil
+	})
+	if err != nil {
+		return &claims,fmt.Errorf("coulnd't parse claims")
+	}
+	if !parsed.Valid {
+		return &claims,fmt.Errorf("not a valid token")
+	}
+	return &claims,nil
 }
