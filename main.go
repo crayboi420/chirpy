@@ -26,6 +26,8 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("/",handlePage)
 	mux.Handle("/app/*", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 	mux.HandleFunc("GET /api/healthz", healthz)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.middlewareMetricsHits)
@@ -56,4 +58,17 @@ func main() {
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(srv.ListenAndServe())
 
+}
+
+func handlePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(200)
+	const page = `<html>
+<head></head>
+<body>
+	<p> Hello from Docker! I'm a Go server. </p>
+</body>
+</html>
+`
+	w.Write([]byte(page))
 }
