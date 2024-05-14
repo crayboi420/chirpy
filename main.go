@@ -11,7 +11,7 @@ import (
 
 func main() {
 	const filepathRoot = "./files/"
-	const port = "8080"
+	port := os.Getenv("PORT")
 
 	godotenv.Load()
 	jwtSecret := os.Getenv("JWT_SECRET")
