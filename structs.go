@@ -1,6 +1,6 @@
 package main
 
-import "github.com/crayboi420/chirpy/internal/database"
+import "github.com/kanavj/chirpy/internal/database"
 
 type apiConfig struct {
 	fileserverHits int
